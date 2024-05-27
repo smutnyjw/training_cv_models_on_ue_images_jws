@@ -225,6 +225,7 @@ def build_vgg16_transfer_learning(img_size, num_classes, base_path):
 ####################################################################
 #       Experiment Setting
 ####################################################################
+
 def run_a_specific_setting(cfg_setting):
     '''
     This function is set by the user to enable running a particular test
@@ -519,7 +520,6 @@ def assign_data_splits(df_real: pd.DataFrame, df_synth: pd.DataFrame,
 ####################################################################
 ####################################################################
 
-
 def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
                     base_path: str, use_synth_dataset_list: list):
     print(f"----- Run {type} model w/ cfg {cfg_setting} -----")
@@ -528,13 +528,13 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
     # First determine what model is being tested
     if type.lower() == "vgg16":
         import cfg_vgg16 as cfg
+
         cfg.BASE_PATH = setup_output_dir(base_path=base_path,
                                          type='vgg16', cfg_num=cfg_setting)
         model = build_vgg16_transfer_learning(img_size=cfg.IMAGE_SIZE,
                                                 num_classes=cfg.NUM_CLASSES,
                                                 base_path=cfg.BASE_PATH,
                                               )
-
         lr_schedule = ExponentialDecay(
             initial_learning_rate=cfg.MODEL_LR,
             decay_steps=cfg.MODEL_DECAY_STEPS,
@@ -548,6 +548,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         import cfg_mobilenet as cfg
         cfg.BASE_PATH = setup_output_dir(base_path=base_path,
                                          type='mobilenet', cfg_num=cfg_setting)
+
         model = build_mobilenet_transfer_learning(img_size=cfg.IMAGE_SIZE,
                                                 num_classes=cfg.NUM_CLASSES,
                                                 base_path=cfg.BASE_PATH)
@@ -604,7 +605,6 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         raise Exception("--- ERROR: Percentage of data that is real for "
                         "training split must be b/w 0.0 & 1.0")
 
-
     ############################################
     ############################################
     #                   BEGIN
@@ -654,8 +654,23 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         Binary classifier to state whether a metal weld is a defect or not.
         '''
 
+        # Checks
+        for key in cfg.DATASET_LISTS_CD:
+            for i, path in enumerate(cfg.DATASET_LISTS_CD[key]):
+                if os.path.exists(path) is False:
+                    raise Exception(
+                        f"--- ERROR: The following DATASET_LISTS_CD "
+                        f"path does not exist: {path}")
+                num_paths += 1
+        if num_paths == 0:
+            raise Exception("--- ERROR: Zero dataset paths listed. Please "
+                            "specify a dataset .csv file to load.")
+
+
         # TODO - Confirm Heatmap & class_weight information is correct.
 
+
+        # Setup the various classfier variables for this case
         cfg.CLASS_MAP_ = {'Defect': 0,
                             'Good': 1,
                         }
@@ -679,6 +694,20 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         '''
         Binary classifier to determine if the image is of a Cat or Dog
         '''
+
+        # Checks
+        for key in cfg.DATASET_LISTS_WELD:
+            for i, path in enumerate(cfg.DATASET_LISTS_CD[key]):
+                if os.path.exists(path) is False:
+                    raise Exception(f"--- ERROR: The following "
+                                    f"DATASET_LISTS_CD path does not exist:"
+                                    f" {path}")
+                num_paths += 1
+        if num_paths == 0:
+            raise Exception("--- ERROR: Zero dataset paths listed. Please "
+                            "specify a dataset .csv file to load.")
+
+        # Setup the various classfier variables for this case
         cfg.CLASS_MAP_ = {'dog': 0,
                             'cat': 1}
 

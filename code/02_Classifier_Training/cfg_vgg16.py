@@ -39,7 +39,7 @@ DATASET_LISTS_WELD = {
     "synth": []
 }
 
-IMAGE_SIZE = (224, 224, 3)
+IMAGE_SIZE = (224, 224, 3)  # Any setting other than (224, 224, 3) is untested
 
 TOTAL_NUMBER_OF_IMAGES = 10000
 PERC_TRAIN = 0.80

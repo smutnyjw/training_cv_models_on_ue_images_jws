@@ -39,7 +39,7 @@ DATASET_LISTS_WELD = {
     "synth": []
 }
 
-IMAGE_SIZE = (224, 224, 3)
+IMAGE_SIZE = (224, 224, 3)  # Any setting other than (224, 224, 3) is untested
 
 TOTAL_NUMBER_OF_IMAGES = 10000
 PERC_TRAIN = 0.80
@@ -51,13 +51,12 @@ VAL_PERC_REAL = 1.0
 
 EPOCHS = 100
 NUM_INIT_EPOCHS = 5
-BATCH_SIZE = 100     #64#200 #64
+BATCH_SIZE = 100
 BATCH_SIZE_VAL = 25
 BATCH_SIZE_TEST = BATCH_SIZE_VAL
 
 MODEL_OPT = "RMSprop"
-MODEL_LR = 0.0001   #0.00005=Iffy for cfg4+ #0.0001   #0.001 is too much
-#0.0001 for pre-3
+MODEL_LR = 0.0001
 MODEL_DECAY_STEPS = TOTAL_NUMBER_OF_IMAGES*PERC_TRAIN/BATCH_SIZE
 MODEL_DECAY_RATE = 0.95
 
@@ -134,6 +133,7 @@ _info_results = {
     "val_precision": -1,
     "Cost Values [TP/TN/FP/FN]": [COST_TP, COST_TN, COST_FP, COST_FN]
 }
+
 
 #########################################
 # Artifact File paths

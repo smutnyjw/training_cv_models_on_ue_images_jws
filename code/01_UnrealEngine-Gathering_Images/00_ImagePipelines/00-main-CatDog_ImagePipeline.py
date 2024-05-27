@@ -1,5 +1,5 @@
 '''
-File:   04_ImagePipeline_01b_onefile.py
+File:   00-main-CatDog_ImagePipeline.py
 Author: John Smutny
 Date:   03/10/2024
 Description: 
@@ -19,7 +19,7 @@ Other Notes:
 
     Please enter all user inputs at the bottom of this script. Such as...
     - Desired camera angles
-    - Desired output path for the collected screenshots
+    - Desired output path for the collected screenshots (output_path_to_images)
     - Absolute file paths for all textures used in the collection.
 
 '''
@@ -828,116 +828,117 @@ class MoveCamera(object):
 #######################################################
 #######################################################
 
+if __name__=="__main__":
 
-############################
-#   User defined Unreal Assets
+    ############################
+    #   User defined Unreal Assets
 
-HOME_PATH = '/Game/MENG_POC_04_ImagePipeline01/TextureSelect/'
-MATERIAL_PATHS = [
-    HOME_PATH + 'background_select_Mat_Inst.background_select_Mat_Inst',
-    HOME_PATH + 'scene_select_Mat_Inst.scene_select_Mat_Inst',
-    HOME_PATH + 'floor_select_Mat_Inst.floor_select_Mat_Inst'
-    ]
+    HOME_PATH = '/Game/MENG_POC_04_ImagePipeline01/TextureSelect/'
+    MATERIAL_PATHS = [
+        HOME_PATH + 'background_select_Mat_Inst.background_select_Mat_Inst',
+        HOME_PATH + 'scene_select_Mat_Inst.scene_select_Mat_Inst',
+        HOME_PATH + 'floor_select_Mat_Inst.floor_select_Mat_Inst'
+        ]
 
-SCENE_PRESETS = {
-    # Multiplexer decoding of material instance parameters to select a texture.
-    #   Switch values are based on LERP nodes, not switches.
-    #   Values must be 0.0 or 1.0
-    "leaves": [0, 0, 0, 0, 0],
-    "forest": [1, 0, 0, 0, 0],
-    "interior01": [0, 0, 1, 0, 0],
-    "grassland": [0, 1, 1, 0, 0],
-    "interior02": [0, 0, 0, 0, 1],
-    "mountain": [0, 0, 0, 1, 1]
+    SCENE_PRESETS = {
+        # Multiplexer decoding of material instance parameters to select a texture.
+        #   Switch values are based on LERP nodes, not switches.
+        #   Values must be 0.0 or 1.0
+        "leaves": [0, 0, 0, 0, 0],
+        "forest": [1, 0, 0, 0, 0],
+        "interior01": [0, 0, 1, 0, 0],
+        "grassland": [0, 1, 1, 0, 0],
+        "interior02": [0, 0, 0, 0, 1],
+        "mountain": [0, 0, 0, 1, 1]
 
-}
-MATERIAL_PARAMS = ['sw_1a', 'sw_1b', 'sw_2', 'sw_1c', 'sw_3']
+    }
+    MATERIAL_PARAMS = ['sw_1a', 'sw_1b', 'sw_2', 'sw_1c', 'sw_3']
 
-# Checks
-check_user_inputted_UE_assets(MATERIAL_PATHS,
-                              MATERIAL_PARAMS,
-                              SCENE_PRESETS)
+    # Checks
+    check_user_inputted_UE_assets(MATERIAL_PATHS,
+                                  MATERIAL_PARAMS,
+                                  SCENE_PRESETS)
 
-############################
-#   Operational settings
+    ############################
+    #   Operational settings
 
-output_path_to_images = "..\\_data\\cat_dog\\synth"
+    output_path_to_images = "..\\_data\\cat_dog\\synth"
 
-CAM_HOME = [0, -300, 200]
-FRAME_BUFFER = 30
+    CAM_HOME = [0, -300, 200]
+    FRAME_BUFFER = 30
 
-#####
-#   Valid settings for image collection
-#       SUN_NORTH_OFFSET =  [ 75 --> 190 ]
-#       Rho =               [ 100 --> 400 ]
-#       alpha =             [ -180 --> 0 ]
-#       phi =               [ 0 --> 90 ]
-#
-#   NOTE:
-#   Unlit mode
-#   https://docs.unrealengine.com/4.27/en-US/PythonAPI/class/ViewModeIndex.html?highlight=unlit
-SUN_NORTH_OFFSET = [ 190 ]
-RANGE_RHO = [200, 240, 290 ]
-RANGE_ALPHA = [-140, -105, -95, -85, -75, -55]
-RANGE_PHI = [45, 55, 65, 80]
+    #####
+    #   Valid settings for image collection (in Degrees)
+    #       SUN_NORTH_OFFSET =  [ 75 --> 190 ]
+    #       Rho =               [ 100 --> 400 ]
+    #       alpha =             [ -180 --> 0 ]
+    #       phi =               [ 0 --> 90 ]
+    #
+    #   NOTE:
+    #   Unlit mode
+    #   https://docs.unrealengine.com/4.27/en-US/PythonAPI/class/ViewModeIndex.html?highlight=unlit
+    SUN_NORTH_OFFSET = [ 190 ]
+    RANGE_RHO = [200, 240, 290 ]
+    RANGE_ALPHA = [-140, -105, -95, -85, -75, -55]
+    RANGE_PHI = [45, 55, 65, 80]
 
 
-#######################################################
-#######################################################
-#######################################################
+    #######################################################
+    #######################################################
+    #######################################################
 
-#######################################################
-#           Start of MAIN()
-#######################################################
+    #######################################################
+    #           Start of MAIN()
+    #######################################################
 
-home_path = HOME_PATH
-material_paths = MATERIAL_PATHS
-material_params = MATERIAL_PARAMS
+    home_path = HOME_PATH
+    material_paths = MATERIAL_PATHS
+    material_params = MATERIAL_PARAMS
 
-#####
-# Code to print out all or specific actors in a loaded level
-actors = unreal.EditorLevelLibrary().get_all_level_actors()
+    #####
+    # Code to print out all or specific actors in a loaded level
+    actors = unreal.EditorLevelLibrary().get_all_level_actors()
 
-actor_dic = link_ue_objects()
+    actor_dic = link_ue_objects()
 
-cam_home = CAM_HOME
-test1 = MoveCamera(ue_objs=actor_dic,
-                   cam_home=cam_home,
-                   output_path_of_run=output_path_to_images)
+    cam_home = CAM_HOME
+    test1 = MoveCamera(ue_objs=actor_dic,
+                       cam_home=cam_home,
+                       output_path_of_run=output_path_to_images)
 
-####################################################
-#   Define test parameters
-####################################################
+    ####################################################
+    #   Define test parameters
+    ####################################################
 
-range_rho = RANGE_RHO
-range_alpha = RANGE_ALPHA
-range_phi = RANGE_PHI
+    range_rho = RANGE_RHO
+    range_alpha = RANGE_ALPHA
+    range_phi = RANGE_PHI
 
-test1.calc_cam_cartesian_locs(range_rho=range_rho,
-                              range_alpha=range_alpha,
-                              range_phi=range_phi)
+    test1.calc_cam_cartesian_locs(range_rho=range_rho,
+                                  range_alpha=range_alpha,
+                                  range_phi=range_phi)
 
-num_models = len(actor_dic["points_of_interest_obj"])
-num_angles = len(range_rho)*len(range_alpha)*len(range_phi)
-num_actions = num_models * num_angles * len(SCENE_PRESETS.keys()) * \
-              len(SUN_NORTH_OFFSET)
+    num_models = len(actor_dic["points_of_interest_obj"])
+    num_angles = len(range_rho)*len(range_alpha)*len(range_phi)
+    num_actions = num_models * num_angles * len(SCENE_PRESETS.keys()) * \
+                  len(SUN_NORTH_OFFSET)
 
-num_frames = num_actions * FRAME_BUFFER * 5.0
+    num_frames = num_actions * FRAME_BUFFER * 5.0
 
-test1.set_max_frames(num_frames)
-test1.set_frame_buffer(FRAME_BUFFER)
-test1.set_num_actions(num_actions)
-test1.set_material_paths(material_paths)
-test1.set_material_params(material_params)
-test1.set_scene_presets(SCENE_PRESETS)
-test1.set_scene_sun_north_offset(SUN_NORTH_OFFSET)
+    test1.set_max_frames(num_frames)
+    test1.set_frame_buffer(FRAME_BUFFER)
+    test1.set_num_actions(num_actions)
+    test1.set_material_paths(material_paths)
+    test1.set_material_params(material_params)
+    test1.set_scene_presets(SCENE_PRESETS)
+    test1.set_scene_sun_north_offset(SUN_NORTH_OFFSET)
 
-####################################################
-#   Execute test for each preset
-####################################################
+    ####################################################
+    #   Execute test for each preset
+    ####################################################
 
-unreal.log_warning("----- START TEST ------")
-test1.set_environment()
-test1.start(1)
-unreal.log_warning("*** DEBUG: PRESET COMPLETE!!!")
+    unreal.log_warning("----- START TEST ------")
+    test1.set_environment()
+    test1.start(1)
+    unreal.log_warning("*** DEBUG: PRESET COMPLETE!!!")
 

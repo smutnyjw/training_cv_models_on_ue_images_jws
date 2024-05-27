@@ -1,10 +1,28 @@
 '''
-File:   
-Author: 
-Date:   
+File:   01-main-Weld_ImagePipeline.py
+Author: John Smutny
+Date:   05/01/2024
 Description: 
+    This is the main python script that is executed from a Unreal Engine (UE)
+    Editor window to collect screenshots of points on a rectangular mesh with a
+    specific texture applied.
+
+    In order for this script to complete successfully several steps need to
+    be completed.
+    1) All object names specified in this script must match names of
+        objects/actors present in the UE editor that calls this script.
+    2) The user must fine-tune the 'FRAME_BUFFER' variable at the bottom of
+        this script to prevent a sequential 'slate_post_tick_handle()' from
+        interrupting a currently executing callback. (This will cause you to
+        lose screenshots since the next callback starts before the previous
+        could finish).
+    3) If using texture parameters in your UE .uasset Material Instance,
+        the names for your 'material parameters' must match the names given in
+        this script.
 
 Other Notes:
+    Please skip to the '__main__' method to see the USER INPUTS for
+    customizations.
 
 '''
 
@@ -302,6 +320,7 @@ class UE_ImagePipeline(object):
 
         return error
 
+
     def set_scene(self, plates_id: int, basecolor_id: int, map_set_id: int,
                   plate_offset_id: int, angle_id: int):
         terminate = False
@@ -516,6 +535,7 @@ class UE_ImagePipeline(object):
 
         return force_terminate
 
+
     def seq_step_light_offset(self):
 
         plate_offset_pos = self.debug_current_plate_offset
@@ -632,6 +652,7 @@ class UE_ImagePipeline(object):
         #self.log_df.loc[len(self.log_df.index)] = [abs_filepath, label]
         self.log_df = self.log_df + f"{abs_filepath},{label}\n"
 
+
     def output_image_csv(self, path, filename):
         print("Run ::output_image_csv()")
 
@@ -650,7 +671,6 @@ class UE_ImagePipeline(object):
 #################################################
 #               Helper Methods
 #################################################
-
 
 def link_ue_objects():
     plates = []
@@ -777,6 +797,7 @@ def correct_weld_pts_for_ue(plate_offsets: list,
 
     return plate_offsets
 
+
 def set_random_offsets(num_of_pts: int,
                         x_tol: int, y_tol: int, z: int, z_tol: list):
     obj_offsets = []
@@ -795,7 +816,7 @@ def set_random_offsets(num_of_pts: int,
     return obj_offsets
 
 
-def define_sequence_ints(num_plates: list, basecolor_ids: list,
+def define_sequence_ints(num_plates: int, basecolor_ids: list,
                          map_set_ids: list, num_offsets_per_plate: int,
                          num_angles_per_ofset: int):
     seq_list = []
@@ -810,40 +831,57 @@ def define_sequence_ints(num_plates: list, basecolor_ids: list,
     return seq_list
 
 
+#######################################################
+#######################################################
+#######################################################
+
 if __name__=="__main__":
 
     #################################################
     #               User Settings
     #################################################
 
+    ###
+    #   Insert the path for where you want screenshots to be saved. The
+    #   process involves taking the screenshot image and logging it in the
+    #   resulting .csv file.
+    #       - UE_ImagePipeline::take_HighResShot2()
+    #       - UE_ImagePipeline::create_image_name()
+    #       - UE_ImagePipeline::output_image_csv()
     image_output_path = "..\\_data\\welding\\synth"
 
-
-    ###
-    # Load the needed Material Instance and all used switches
+    #   Path in which to load the UE Material Instance(s) that will be loaded
+    #   and alternated for every UE_ImagePipeline::tick() method.
     MATERIAL_PATHS = "/Game/ImagePipeline-Welds/" \
                      "M_MainPlate_Inst.M_MainPlate_Inst"
 
+    #   Set how many different random camera angle screenshots to take for
+    #   every 'weld plate' point.
+    ANGLES_PER_OFFSET = 4
+
+    #   Set how many computer 'ticks' can pass before the next callback.
+    #       - TIP: If you have more actions in a callback, you need more time.
+    FRAME_BUFFER = 30
+
+
+    ###
+    # Load the needed Material Instance and all used switches. This
+    # dictionary is used to load the Material Instance .uasset parameters
+    # into the UE_ImagePipeline class.
     MATERIAL_PARAMS = {'basecolor': "sw_basecolor",
                        'AmbientOcclusion': "sw_AmbientOcclusion",
                        'Metallic': "sw_Metallic",
                        'Normal': "sw_Normal",
                        'Roughness': "sw_Roughness"}
 
-    basecolor_ids = list(range(6))
-    map_set_ids = list(range(5))
-    angles_per_offset = 4
-
-
     ###
     # Set geographic locations for the screenshots to follow.
-
+    #   cc = UE CineCamera actor
     cam_height_from_plate = 6
-    cc_tracker_light_height_from_plate = 200
-
     pixel_spacing_bw_locs = 400     # If changed... must recreate map_sets
     dist_from_border = 125          # If changed... must recreate map_sets
     cc_tracker_abs_height = 35      # Do not change
+
     plate_offsets = define_weld_pts(pixel_spacing=pixel_spacing_bw_locs,
                                     dist_from_border=dist_from_border,
                                     cam_height_from_plate=cc_tracker_abs_height)
@@ -852,15 +890,21 @@ if __name__=="__main__":
                                             plate_x=800, plate_y=800,
                                             cam_height=cam_height_from_plate)
 
-    # DEBUG override
-    #plate_offsets = plate_offsets[:2]
 
+    ###
+    # Geographic references for the CineCamera actor (cc).
     plate_ids_ref_left_corners = [[-2150, -1300, 35]]
+    cc_tracker_light_height_from_plate = 200
 
     cam_home = [[0, 0, cam_height_from_plate],
                 [0, 0, cc_tracker_light_height_from_plate]]
 
-    FRAME_BUFFER = 30
+
+    ###
+    # Other setting
+    basecolor_ids = list(range(6))
+    map_set_ids = list(range(5))
+
 
     #################################################
     #               Preparation
@@ -878,15 +922,15 @@ if __name__=="__main__":
     num_offsets_per_plate = len(plate_offsets)
 
     max_num_actions = num_plates * num_basecolors * num_map_sets * \
-                  num_offsets_per_plate * angles_per_offset
+                  num_offsets_per_plate * ANGLES_PER_OFFSET
     print(f"*** DEBUG: {max_num_actions} expected.\n")
-    num_req_frames = max_num_actions * FRAME_BUFFER * 5.0
+    num_req_frames = int(max_num_actions * FRAME_BUFFER * 5.0)
 
     seq_list = define_sequence_ints(num_plates=num_plates,
                                  basecolor_ids=basecolor_ids,
                                  map_set_ids=map_set_ids,
                                  num_offsets_per_plate=num_offsets_per_plate,
-                                 num_angles_per_ofset=angles_per_offset)
+                                 num_angles_per_ofset=ANGLES_PER_OFFSET)
 
 
     ###
@@ -924,14 +968,11 @@ if __name__=="__main__":
                             material_params_dict=MATERIAL_PARAMS,
                             output_path_of_run=image_output_path)
 
-    # test1.calc_cam_cartesian_locs(range_rho=camera_angles['rho'],
-    #                               range_alpha=camera_angles['alpha'],
-    #                               range_phi=camera_angles['phi'])
-
     test1.set_max_frames(num_req_frames)
     test1.set_frame_buffer(FRAME_BUFFER)
     test1.set_max_num_actions(max_num_actions)
     test1.set_sequence_list(seq_list)
+
 
     #################################################
     #               Start of Execution
@@ -939,5 +980,5 @@ if __name__=="__main__":
 
     unreal.log_warning("----- START TEST ------")
     test1.set_environment()
-    test1.start(1)
+    test1.start(seq=1)      # Start collecting screenshots from sequence 1
     unreal.log_warning("*** DEBUG: PRESET COMPLETE!!!")

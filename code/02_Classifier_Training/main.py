@@ -1,7 +1,7 @@
 '''
-File:   01_run_model_iterations.py
+File:   main.py
 Author: John Smutny
-Date:   03/26/2024
+Date:   05/01/2024
 Description: 
     A base file that will enable GPUs used during the calling of a separate
     python script/method for model training.
@@ -14,7 +14,8 @@ Description:
         run_model::run_a_specific_setting()
 
 Other Notes:
-
+    Remember to set all of your settings in the 'cfg_vgg16.py' and
+    'cfg_mobilenet.py' files.
 '''
 
 
@@ -35,7 +36,11 @@ def set_gpus():
 
 
 if __name__ == "__main__":
-    # Key
+
+    ###
+    # Keys
+    #   - Valid keys are defined in the run_model::run_a_specific_setting()
+    #       method.
     path = os.path.join('output')
     cfgs = [0, 1, 2, 3, 4, 5, 6]
     r_cfgs = [6, 5, 4, 3, 2, 1, 0]
@@ -47,9 +52,9 @@ if __name__ == "__main__":
 
     ###
     # Attempt 1)
-    #   This is my main way of running my models. Call an isolated ::main()
-    #   method that will execute based on input parameters I give over the method
-    #   parameters.
+    #   This is my main way of running my models. Call an isolated
+    #   run_model::main() method that will execute based on input
+    #   parameters I give over the method parameters.
     #
     #   valid values for 'type' input: {VGG16, mobilenetv3}
 
