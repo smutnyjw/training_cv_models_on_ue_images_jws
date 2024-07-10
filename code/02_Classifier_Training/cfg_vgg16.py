@@ -39,6 +39,15 @@ DATASET_LISTS_WELD = {
     "synth": []
 }
 
+JSON_SETTINGS_FILE = {  "cats_dogs": "C:\\Users\\johns\\PycharmProjects\\VT\\"
+                                     "training_cv_models_on_ue_images_jws\\"
+                                     "code\\02_Classifier_Training\\"
+                                     "run_settings-cat_dog.json",
+                        "weld": "C:\\Users\\johns\\PycharmProjects\\VT\\"
+                                     "training_cv_models_on_ue_images_jws\\"
+                                     "code\\02_Classifier_Training\\"
+                                     "run_settings-weld.json"}
+
 IMAGE_SIZE = (224, 224, 3)  # Any setting other than (224, 224, 3) is untested
 
 TOTAL_NUMBER_OF_IMAGES = 10000

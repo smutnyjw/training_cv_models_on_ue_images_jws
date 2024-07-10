@@ -1,0 +1,110 @@
+{
+  "data_splits": {
+      "split_train": 0.60,
+      "split_val": 0.20,
+      "split_test": 0.20
+    },
+  "class_ratios": [0.7, 0.3],
+  "-1": {
+      "init_epochs": 1,
+      "total_epochs": 3,
+      "total_synth_training": 10,
+      "total_real": 1000
+    },
+  "0": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 0,
+      "total_real": 2000
+    },
+  "1": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 10,
+      "total_real": 2000
+    },
+  "2": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 20,
+      "total_real": 2000
+    },
+  "3": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 40,
+      "total_real": 2000
+    },
+  "4": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 50,
+      "total_real": 2000
+    },
+  "5": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 80,
+      "total_real": 2000
+    },
+  "6": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 100,
+      "total_real": 2000
+    },
+  "7": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 150,
+      "total_real": 2000
+    },
+  "8": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 200,
+      "total_real": 2000
+    },
+  "9": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 300,
+      "total_real": 2000
+    },
+  "10": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 400,
+      "total_real": 2000
+    },
+  "11": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 500,
+      "total_real": 2000
+    },
+  "12": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 600,
+      "total_real": 2000
+    },
+  "13": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 800,
+      "total_real": 2000
+    },
+  "14": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 1000,
+      "total_real": 2000
+    },
+  "15": {
+      "init_epochs": 5,
+      "total_epochs": 100,
+      "total_synth_training": 1200,
+      "total_real": 2000
+    }
+}

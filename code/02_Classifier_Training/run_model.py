@@ -27,6 +27,7 @@ Other Notes:
 import math
 import os, gc
 import numpy as np
+import json
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -222,141 +223,6 @@ def build_vgg16_transfer_learning(img_size, num_classes, base_path):
 
     return model
 
-####################################################################
-#       Experiment Setting
-####################################################################
-
-def run_a_specific_setting(cfg_setting):
-    '''
-    This function is set by the user to enable running a particular test
-    multiple times sequentially but with different settings each time. This
-    increases test efficiency.
-    :param cfg_setting:
-    :return: [number of epochs to train,
-                Total amount of images to use,
-                Percentage of images used in the TRAINING set are Real]
-    '''
-    epochs = -1
-    total_images = -1
-    train_perc_real = -1
-    num_init_epochs = -1
-    force_sample = [0, 0, 0, 0]
-
-    print(f"*** WARN: cfg settings override {cfg_setting}")
-    if cfg_setting == 0:
-        total_images = 10000
-        train_perc_real = 1.0
-    elif cfg_setting == 1:
-        total_images = 10000
-        train_perc_real = 0.75
-    elif cfg_setting == 2:
-        total_images = 10000
-        train_perc_real = 0.50
-    elif cfg_setting == 3:
-        total_images = 10000
-        train_perc_real = 0.25
-    elif cfg_setting == 4:
-        total_images = 10000
-        train_perc_real = 0.10
-    elif cfg_setting == 5:
-        total_images = 10000
-        train_perc_real = 0.05
-    elif cfg_setting == 6:
-        total_images = 10000
-        train_perc_real = 0.0
-    elif cfg_setting == 11:  # 75:25 --> 6000 train real images
-        total_images = 7500
-        train_perc_real = 1.0
-    elif cfg_setting == 12:  # 50:50 --> 4000 train real images
-        total_images = 5000
-        train_perc_real = 1.0
-    elif cfg_setting == 13:     # 25:75 --> 2000 train real images
-        total_images = 2500
-        train_perc_real = 1.0
-    elif cfg_setting == 14:     # 10:90 --> 800 train real images
-        total_images = 1000
-        train_perc_real = 1.0
-    elif cfg_setting == 15:     # 05:95 --> 400 train real images
-        total_images = 500
-        train_perc_real = 1.0
-
-    elif cfg_setting == 20:  # -->  RSR - no change
-        total_images = 2000
-        train_perc_real = 1.0
-        force_sample = [1400, 600, 0, 0]    #[RealDef,RealGo,SynDef,SynGo]
-    elif cfg_setting == 21:  # -->  Resample - downsample
-        total_images = 1200
-        train_perc_real = 1.0
-        force_sample = [600, 600, 0, 0]
-    elif cfg_setting == 22:  # -->  Resample - upsample
-        total_images = 2400
-        train_perc_real = 1.0
-        force_sample = [1200, 1200, 0, 0]
-    elif cfg_setting == 23:  # -->  Resample - pad w/ synth
-        total_images = 2400
-        train_perc_real = 0.6875
-        force_sample = [1200, 600, 0, 600]
-    elif cfg_setting == 24:  # -->  RSR
-        total_images = 2500
-        train_perc_real = 0.75
-        force_sample = [1400, 600, 250, 250]
-    elif cfg_setting == 25:  # -->  RSR
-        total_images = 3000
-        train_perc_real = 0.58
-        force_sample = [1400, 600, 580, 420]
-    elif cfg_setting == 26:  # -->  RSR
-        total_images = 4000
-        train_perc_real = 0.37
-        force_sample = [1400, 600, 1240, 760]
-    elif cfg_setting == 27:  # -->  RSR
-        total_images = 5000
-        train_perc_real = 0.25
-        force_sample = [1400, 600, 2100, 900]
-    elif cfg_setting == 28:  # -->  Resample - No Change, No Class Weighting
-        total_images = 2000
-        train_perc_real = 1.0
-        force_sample = [1200, 600, 0, 0]  # [RealDef,RealGo,SynDef,SynGo]
-    elif cfg_setting == 29:  # -->  Resample - No Change, Class Weighting
-        total_images = 2000
-        train_perc_real = 1.0
-        force_sample = [1200, 600, 0, 0]  # [RealDef,RealGo,SynDef,SynGo]
-
-    else:
-        num_init_epochs = 3
-        if cfg_setting == -1:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 1.0
-        if cfg_setting == -2:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 0.9
-        elif cfg_setting == -3:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 0.25
-        elif cfg_setting == -4:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 0.1
-        elif cfg_setting == -5:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 0.05
-        elif cfg_setting == -6:
-            epochs = 10
-            total_images = 2000
-            train_perc_real = 0.0
-        elif cfg_setting == -99:
-            epochs = 1
-            total_images = 1500
-            train_perc_real = 1.0
-        else:
-            print(f"WARN - Running from .cfg files. Invalid cfg_setting"
-                  f" {cfg_setting}")
-
-    return [epochs, total_images, train_perc_real,
-            num_init_epochs, force_sample]
 
 ####################################################################
 #       Misc Method declarations
@@ -520,9 +386,9 @@ def assign_data_splits(df_real: pd.DataFrame, df_synth: pd.DataFrame,
 ####################################################################
 ####################################################################
 
-def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
-                    base_path: str, use_synth_dataset_list: list):
+def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     print(f"----- Run {type} model w/ cfg {cfg_setting} -----")
+    ERROR_FLAG = False
 
     ########################
     # First determine what model is being tested
@@ -567,18 +433,44 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
                         f"Chose either [vgg16, mobilenetv3].")
 
     ##########################
-    # Override for specific settings
-    override_settings = run_a_specific_setting(cfg_setting)
+    # Load from settings json file
+
+    with open(cfg.JSON_SETTINGS_FILE[CASE_FLAG]) as json_file:
+        settings = json.load(json_file)
+
+        init_epochs = settings[str(cfg_setting)]['init_epochs']
+        total_epochs = settings[str(cfg_setting)]['total_epochs']
+        total_synth_train = settings[str(cfg_setting)]['total_synth_training']
+        total_real = settings[str(cfg_setting)]['total_real']
+        data_splits = settings['data_splits']
+        class_ratios = settings['class_ratios']
+
+
+    ##########################
+    # Override based on json file
+
     try:
-        if override_settings[0] != -1:
-            cfg.EPOCHS = override_settings[0]
-        if override_settings[1] != -1:
-            cfg.TOTAL_NUMBER_OF_IMAGES = override_settings[1]
-        if override_settings[2] != -1:
-            cfg.TRAIN_PERC_REAL = override_settings[2]
-        if override_settings[3] != -1:
-            cfg.NUM_INIT_EPOCHS = override_settings[3]
-        force_sample = override_settings[4]
+        cfg.TOTAL_NUMBER_OF_IMAGES = total_real + total_synth_train
+
+        cfg.TRAIN_PERC_REAL = (total_real * data_splits['split_train']) \
+                                / ((total_real * data_splits['split_train']) \
+                                  + total_synth_train)
+
+        cfg.NUM_INIT_EPOCHS = init_epochs
+        cfg.EPOCHS = total_epochs
+
+        cfg.PERC_TRAIN = ((total_real * data_splits['split_train'])
+                            + total_synth_train) / cfg.TOTAL_NUMBER_OF_IMAGES
+        cfg.PERC_VAL = (total_real * data_splits['split_val']) \
+                            / cfg.TOTAL_NUMBER_OF_IMAGES
+        cfg.PERC_TEST = (total_real * data_splits['split_test']) \
+                            / cfg.TOTAL_NUMBER_OF_IMAGES
+
+        #[RealCat/Defect, RealDog/Good, SynCat/Defect, SynDog/Good]
+        force_sample = [int(total_real * class_ratios[0]),
+                        int(total_real * class_ratios[1]),
+                        int(total_synth_train * class_ratios[0]),
+                        int(total_synth_train * class_ratios[1])]
     except:
         raise("*** ERROR after ::run_a_specific_setting() - could not parse "
               "one of the outputs. Please run code in 'debug' mode.")
@@ -599,7 +491,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
                                 cfg.PERC_TEST * cfg.TOTAL_NUMBER_OF_IMAGES]
 
     # Checks
-    if cfg.PERC_TRAIN + cfg.PERC_VAL + cfg.PERC_TEST != 1.0:
+    if not math.isclose(cfg.PERC_TRAIN + cfg.PERC_VAL + cfg.PERC_TEST, 1.0):
         raise Exception("--- ERROR: Dataset splits must equal 1.0")
     if cfg.TRAIN_PERC_REAL < 0.0 or cfg.TRAIN_PERC_REAL > 1.0:
         raise Exception("--- ERROR: Percentage of data that is real for "
@@ -649,14 +541,15 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
     ####################################################################
     ####################################################################
     # Load specific datasets for the specific use case
+    num_paths = 0
     if CASE_FLAG.lower() == "weld":
         '''
         Binary classifier to state whether a metal weld is a defect or not.
         '''
 
-        # Checks
-        for key in cfg.DATASET_LISTS_CD:
-            for i, path in enumerate(cfg.DATASET_LISTS_CD[key]):
+        # Checks - Do the data paths exist
+        for key in cfg.DATASET_LISTS_WELD:
+            for i, path in enumerate(cfg.DATASET_LISTS_WELD[key]):
                 if os.path.exists(path) is False:
                     raise Exception(
                         f"--- ERROR: The following DATASET_LISTS_CD "
@@ -675,8 +568,8 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
                             'Good': 1,
                         }
 
-        class_weights = {'Defect': -1,
-                            'Good': -1
+        class_weights = {'Defect': 1,
+                            'Good': 1
                      }
 
         cfg.BINARY_THRESHOLD = 0.5
@@ -685,18 +578,18 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         monitor_mode = "max"
 
         # Real Images
-        abs_path_real = cfg.DATASET_LISTS_WELD['real']
+        dataset_real = cfg.DATASET_LISTS_WELD['real']
 
         # Synthetic images
-        abs_path_synths = cfg.DATASET_LISTS_WELD['synth']
+        dataset_synth = cfg.DATASET_LISTS_WELD['synth']
 
     elif CASE_FLAG.lower() == "cats_dogs":
         '''
         Binary classifier to determine if the image is of a Cat or Dog
         '''
 
-        # Checks
-        for key in cfg.DATASET_LISTS_WELD:
+        # Checks - Do the data paths exist
+        for key in cfg.DATASET_LISTS_CD:
             for i, path in enumerate(cfg.DATASET_LISTS_CD[key]):
                 if os.path.exists(path) is False:
                     raise Exception(f"--- ERROR: The following "
@@ -720,221 +613,128 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
         monitor_mode = "min"
 
         # Real Images
-        abs_path_real = cfg.DATASET_LISTS_CD['real']
+        dataset_real = cfg.DATASET_LISTS_CD['real']
 
         # Synthetic images
-        abs_path_synths = cfg.DATASET_LISTS_CD['synth']
+        dataset_synth = cfg.DATASET_LISTS_CD['synth']
     else:
         raise("*** ERROR: Invalid CASE_FLAG string input. Must be either "
               "['weld', 'cats_dogs']. Terminating script.")
 
     # End of if-else statement to load data
 
-    # Check
-    if len(abs_path_synths) != len(use_synth_dataset_list):
-        print("*** WARN: User specified a 'user_synth_dataset_list' "
-              "register that is not equal to the number of synthetic "
-              "datasets available ({len(use_synth_dataset_list)}). "
-              "Please correct your input and enter as a "
-              "{len(abs_path_synths)}-bit register.")
-
     ##############################################################
     #               Sampling Synthetic Dataset(s)
 
-    if sum(force_sample) > 0:
-        # Select data as specified for each class and each quantity
+    ##
+    # Real data
 
-        ##
-        # Assumption:
-        #   index = [#RealDefects, #RealGood, #SynthDefects, #SynthGood]
-        ##
+    # 1) Load all real data
+    num_loaded_real_imgs = 0
+    population_real_df = pd.DataFrame()
+    for id, dataset_path in enumerate(dataset_real):
 
-        df_real_dataset = pd.read_csv(abs_path_real, header=0, index_col=None)
+        df_i = pd.read_csv(dataset_path, header=0, index_col=None)
+        num_loaded_real_imgs += len(df_i)
 
-        df_real_defect = df_real_dataset[df_real_dataset['class'] ==
-                                       'Defect'].sample(force_sample[0])
-
-        # Oversample if needed for 'GOOD' class
-        if force_sample[1] >= \
-            len(df_real_dataset[df_real_dataset['class'] == 'Good']):
-            more_good_needed = force_sample[1] - \
-                               len(df_real_dataset[df_real_dataset['class'] == 'Good'])
-
-            df_real_good = df_real_dataset[df_real_dataset['class'] == 'Good']
-
-            df_real_good = pd.concat([df_real_good,
-                                      df_real_good.sample(more_good_needed)])
-
+        if id == 0:
+            population_real_df = df_i.copy()
         else:
-            df_real_good = df_real_dataset[df_real_dataset['class'] ==
-                                            'Good'].sample(force_sample[1])
+            population_real_df = pd.merge(population_real_df, df_i, how='outer')
 
-        df_real = pd.concat([df_real_defect, df_real_good])
+    if len(population_real_df['label'].unique()) != 2:
+        raise("ERROR: Number of unique classes found is not 2. Double check "
+              "your loaded datasets.")
 
-        if force_sample[2] + force_sample[3] > 0:
-            abs_syn_file = abs_path_synths[0]
-            df_synth_dataset = pd.read_csv(abs_syn_file, header=0, index_col=None)
+    # 3) Sample each class
+    df_real = pd.DataFrame()
+    for id, l in enumerate(population_real_df['label'].unique()):
+        df_l = population_real_df.query(f'label == \"{l}\"')
+        df_l = df_l.sample(int(total_real * class_ratios[id]))
 
-            if force_sample[2] > 0:
-                df_synth_defect = df_synth_dataset[df_synth_dataset['class'] ==
-                                             'Defect'].sample(force_sample[2])
-            if force_sample[3] > 0:
-                df_synth_good = df_synth_dataset[df_synth_dataset['class'] ==
-                                           'Good'].sample(force_sample[3])
-
-            if force_sample[2] > 0 and force_sample[3] > 0:
-                df_synth = pd.concat([df_synth_defect, df_synth_good])
-            elif force_sample[2] > 0:
-                df_synth = df_synth_defect
-            elif force_sample[3] > 0:
-                df_synth = df_synth_good
-
-            print(f"df_real = {len(df_real[df_real['class'] == 'Defect'])}/"
-                  f"{len(df_real[df_real['class'] == 'Good'])}")
-            print(f"df_synth = {len(df_synth[df_synth['class'] == 'Defect'])}/"
-                  f"{len(df_synth[df_synth['class'] == 'Good'])}")
+        if id == 0:
+            df_real = df_l.copy()
         else:
-            df_synth = pd.DataFrame()
+            df_real = pd.merge(df_real, df_l, how='outer')
 
-        # TODO - WORKAROUND - 'weld' case can only sample from the first
-        #  synthetic dataset listed.
-        #  Need to join the 'binary_sampling' for both cases.
-        total_synth_images = len(df_synth)
+    ##
+    # Synth data
 
-    else:
-        # Determine the proportion of data is from each loaded dataset
-        total_synth_images = 0
-        synth_dataframes_used = []
-        sampling_ratio = []
-        for i in range(len(use_synth_dataset_list)):
+    # 1) Load all synth data
+    num_loaded_synth_imgs = 0
+    population_synth_df = pd.DataFrame()
+    for id, dataset_path in enumerate(dataset_synth):
 
-            if use_synth_dataset_list[i] and i < len(abs_path_synths):
-                abs_path_synth = abs_path_synths[i]
-                df_synth = pd.read_csv(abs_path_synth, header=0, index_col=None)
-                total_synth_images += len(df_synth)
+        df_i = pd.read_csv(dataset_path, header=0, index_col=None)
+        num_loaded_synth_imgs += len(df_i)
 
-                synth_dataframes_used.append(df_synth)
+        if id == 0:
+            population_synth_df = df_i.copy()
+        else:
+            population_synth_df = pd.merge(population_synth_df, df_i, how='outer')
 
-                sampling_ratio.append(len(df_synth))
-            elif i >= len(abs_path_synths):
-                print("*** WARN: Attempting to select invalid synthetic dataset "
-                      "#{i+1}. Only {len(abs_path_synths)} datasets are specified")
+    if len(population_synth_df['label'].unique()) != 2:
+        raise("ERROR: Number of unique classes found is not 2. Double check "
+              "your loaded datasets.")
 
-        for j in range(len(sampling_ratio)):
-            sampling_ratio[j] = sampling_ratio[j] / total_synth_images
+    # 3) Sample each class
+    df_synth = pd.DataFrame()
+    for id, l in enumerate(population_synth_df['label'].unique()):
+        df_l = population_synth_df.query(f'label == \"{l}\"')
+        df_l = df_l.sample(int(total_synth_train * class_ratios[id]))
 
-        ####
-        # Sample the loaded synthetic data proportionally to the amount the
-        #       datasets contribute
-        desired_num_synth = int(cfg.TOTAL_NUMBER_OF_IMAGES * \
-                                cfg.PERC_TRAIN * (1 - cfg.TRAIN_PERC_REAL))
-        validate_dataset_size(total_synth_images, desired_num_synth)
-
-        for i in range(len(synth_dataframes_used)):
-            df = synth_dataframes_used[i]
-            num_each_set = int(sampling_ratio[i] * desired_num_synth)
-            if i == 0:
-                df_synth = binary_sample_dataset(df, desired_samples=num_each_set)
-            else:
-                df_sy = binary_sample_dataset(df, desired_samples=num_each_set)
-
-                df_synth = pd.concat([df_synth, df_sy])
-
-        ##############################################################
-        #                   Sampling Real Dataset(s)
-
-        # Determine how many pictures are needed for the REAL portion
-        df_real_dataset = pd.read_csv(abs_path_real, header=0, index_col=None)
-        perc_train_real = cfg.PERC_TRAIN * cfg.TRAIN_PERC_REAL
-        desired_num_real = int(cfg.TOTAL_NUMBER_OF_IMAGES * (perc_train_real +
-                                                             cfg.PERC_VAL +
-                                                             cfg.PERC_TEST))
-        num_real = validate_dataset_size(len(df_real_dataset),
-                                         desired_num_real)
-        df_real = binary_sample_dataset(df_real_dataset, num_real)
+        if id == 0:
+            df_synth = df_l.copy()
+        else:
+            df_synth = pd.merge(df_synth, df_l, how='outer')
 
 
     # CHECK
     if len(df_real) + len(df_synth) > cfg.TOTAL_NUMBER_OF_IMAGES and \
             len(df_real) + len(df_synth) < cfg.TOTAL_NUMBER_OF_IMAGES * 0.98:
-        raise Exception("--- ERROR: Double check splitting of data. Unequal "
+        ERROR_FLAG = True
+        print("--- ERROR: Double check splitting of data. Unequal "
                         "number of images versus what is desired: "
                         f"{len(df_real) + len(df_synth)} vs "
                         f"{cfg.TOTAL_NUMBER_OF_IMAGES}")
+    if list(df_real.keys()) != list(df_synth.keys()):
+        ERROR_FLAG = True
+        print("--- ERROR: The column keys for df_real and df_synth do not "
+              f"match. real: {df_real.keys()} vs synth: {df_synth.keys()}. "
+              "Please double check your data and match the column "
+              "headers.")
+
+    if ERROR_FLAG == True:
+        raise Exception("--- ERROR: Please fix the above errors")
 
     ##############################################################
-    #               Combine sampled Real & Synthetic Data
+    #               Establish Train/Val/Test dataframes
 
-    # Combine all of the sampled data into one Master file
-    df_master = pd.concat([df_real, df_synth])
+    keys = df_real.keys()
 
-    ###
-    # Assign Train/Val/Test splits
-    # TODO - This method is sampling with a non-even rate
+    x_train, x_val, y_train, y_val = train_test_split(
+                        df_real[keys[0]].tolist(),
+                        df_real[keys[1]].tolist(),
+                        train_size=int(total_real * data_splits['split_train']),
+                        stratify=df_real[keys[1]].tolist()
+                    )
 
+    x_val, x_test, y_val, y_test = train_test_split(
+                        x_val,
+                        y_val,
+                        test_size=int(total_real * data_splits['split_val']),
+                        stratify=y_val
+                    )
 
+    df_train_real = pd.DataFrame({keys[0]: x_train, keys[1]: y_train})
 
-    if 20 <= cfg_setting <= 30:
-        # Shuffle real data that will be sub-divided into train/val/test
-        df_real.sample(1)
-
-        if len(df_synth) > 0:
-            df_synth.sample(1)
-
-        # Determine slice size
-        num_train = int(len(df_master) * cfg.PERC_TRAIN)
-        num_val = int(len(df_master) * cfg.PERC_VAL)
-        num_test = int(len(df_master) * cfg.PERC_TEST)
-
-        # Assign Validation data
-        val_ids = range(int(num_val/2))
-        df_val = pd.concat([df_real[df_real['class']=='Defect'].iloc[val_ids],
-                            df_real[df_real['class']=='Good'].iloc[val_ids]])
-
-        test_ids = range(int(num_val/2), int(num_val/2+num_test/2))
-        df_test = pd.concat([df_real[df_real['class']=='Defect'].iloc[test_ids],
-                            df_real[df_real['class']=='Good'].iloc[test_ids]])
-
-        d_ids = range(int(num_val/2+num_test/2),
-                          len(df_real[df_real['class']=='Defect']))
-        g_ids = range(int(num_val/2+num_test/2),
-                          len(df_real[df_real['class']=='Good']))
-
-        df_train = pd.concat([df_real[df_real['class']=='Defect'].iloc[d_ids],
-                                df_real[df_real['class']=='Good'].iloc[g_ids],
-                                df_synth])
-
-        num_real_in_dataset = len(df_real)
-        num_synth_in_dataset = len(df_synth)
-
-    else:
-        dataset_splits = assign_data_splits(df_real=df_real,
-                                            df_synth=df_synth,
-                                            split_perc=[cfg.PERC_TRAIN,
-                                                        cfg.PERC_VAL,
-                                                        cfg.PERC_TEST],
-                                            real_synth_ratio=[cfg.TRAIN_PERC_REAL,
-                                                              cfg.VAL_PERC_REAL]
-                                            )
-        # Decode Train/Val/Test splits
-        df_train = dataset_splits[0]
-        df_val = dataset_splits[1]
-        df_test = dataset_splits[2]
-
-        num_real_in_dataset = dataset_splits[3][0]
-        num_synth_in_dataset = dataset_splits[3][1]
-
-    # Should I have the test set be balanced?
-    print(f"df_train = {len(df_train[df_train['class'] == 'Defect'])}/"
-                f"{len(df_train[df_train['class'] == 'Good'])}")
-    print(f"df_val = {len(df_val[df_val['class'] == 'Defect'])}/"
-                f"{len(df_val[df_val['class'] == 'Good'])}")
-    print(f"df_test = {len(df_test[df_test['class'] == 'Defect'])}/"
-                f"{len(df_test[df_test['class'] == 'Good'])}")
-    print("*************************\n")
+    df_train = pd.concat([df_train_real, df_synth])
+    df_val = pd.DataFrame({keys[0]: x_val, keys[1]: y_val})
+    df_test = pd.DataFrame({keys[0]: x_test, keys[1]: y_test})
 
     ##
     # Check
+    df_master = pd.concat([df_train, df_val, df_test])
     for label in df_master[df_master.keys()[1]].unique():
         if label not in list(cfg.CLASS_MAP_.keys()):
             raise Exception(
@@ -942,43 +742,51 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
 
     ###
     # Output dataset artifacts
-    keys = list(cfg.CLASS_MAP_.keys())
-    cfg._info_model["Classes"] = keys
-    cfg._info_model["Number of SYNTH Images available"] = total_synth_images
-    cfg._info_model["Number of REAL Images"] = num_real_in_dataset
-    cfg._info_model["Number of SYNTH Images"] = num_synth_in_dataset
+    labels = list(cfg.CLASS_MAP_.keys())
+
+    print(f"df_train = {len(df_train[df_train['label'] == labels[0]])}/"
+                f"{len(df_train[df_train['label'] == labels[1]])}")
+    print(f"df_val = {len(df_val[df_val['label'] == labels[0]])}/"
+                f"{len(df_val[df_val['label'] == labels[1]])}")
+    print(f"df_test = {len(df_test[df_test['label'] == labels[0]])}/"
+                f"{len(df_test[df_test['label'] == labels[1]])}")
+    print("*************************\n")
+
+    cfg._info_model["Classes"] = labels
+    cfg._info_model["Number of REAL Images"] = total_real
+    cfg._info_model["Number of SYNTH Images"] = total_synth_train
 
     cfg._info_model["Class Distribution"] = [
-                                len(df_master[df_master['class'] == keys[0]]),
-                                len(df_master[df_master['class'] == keys[1]])]
+                                len(df_master[df_master['label'] == labels[0]]),
+                                len(df_master[df_master['label'] == labels[1]])]
     cfg._info_model["Class Distribution - Real Images"] = [
-                                len(df_real[df_real['class'] == keys[0]]),
-                                len(df_real[df_real['class'] == keys[1]])]
+                                len(df_real[df_real['label'] == labels[0]]),
+                                len(df_real[df_real['label'] == labels[1]])]
     cfg._info_model["Class Distribution - Train Images"] = [
-                                len(df_train[df_train['class'] == keys[0]]),
-                                len(df_train[df_train['class'] == keys[1]])]
+                                len(df_train[df_train['label'] == labels[0]]),
+                                len(df_train[df_train['label'] == labels[1]])]
     cfg._info_model["Class Distribution - Val Images"] = [
-                                len(df_val[df_val['class'] == keys[0]]),
-                                len(df_val[df_val['class'] == keys[1]])]
+                                len(df_val[df_val['label'] == labels[0]]),
+                                len(df_val[df_val['label'] == labels[1]])]
     cfg._info_model["Class Distribution - Test Images"] = [
-                                len(df_test[df_test['class'] == keys[0]]),
-                                len(df_test[df_test['class'] == keys[1]])]
+                                len(df_test[df_test['label'] == labels[0]]),
+                                len(df_test[df_test['label'] == labels[1]])]
 
     # Update COST values based on class proportion in the real dataset
-    num_class00 = len(df_master[df_master['class'] == keys[0]])
-    num_class01 = len(df_master[df_master['class'] == keys[1]])
+    num_class00 = len(df_master[df_master['label'] == labels[0]])
+    num_class01 = len(df_master[df_master['label'] == labels[1]])
     if cfg_setting != 28:
-        class_weights[keys[0]] = 1 - (num_class00 / len(df_master))
-        class_weights[keys[1]] = 1 - (num_class01 / len(df_master))
+        class_weights[labels[0]] = 1 - (num_class00 / len(df_master))
+        class_weights[labels[1]] = 1 - (num_class01 / len(df_master))
     else:
         # Use for the No Change test in the ReSample Experiment
-        class_weights[keys[0]] = 0.5
-        class_weights[keys[1]] = 0.5
-    cfg._2D_aug["Class Weights"] = [round(class_weights[keys[0]], 3),
-                                    round(class_weights[keys[1]], 3)]
+        class_weights[labels[0]] = 0.5
+        class_weights[labels[1]] = 0.5
+    cfg._2D_aug["Class Weights"] = [round(class_weights[labels[0]], 3),
+                                    round(class_weights[labels[1]], 3)]
 
-    cfg.COST_FP = class_weights[keys[1]]
-    cfg.COST_FN = class_weights[keys[0]]
+    cfg.COST_FP = class_weights[labels[1]]
+    cfg.COST_FN = class_weights[labels[0]]
     cfg._info_results["Cost Values [TP/TN/FP/FN]"] = [cfg.COST_TP, cfg.COST_TN,
                                                       cfg.COST_FP, cfg.COST_FN]
 
@@ -1084,25 +892,27 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
                   )
 
     print(
-        f"*** DEBUG - before pre-training LR = {keras.backend.get_value(model.optimizer.iterations)}")
+        f"*** DEBUG - Begin pre-training")
 
     hist_init = model.fit(
         train_generator,
         epochs=cfg.NUM_INIT_EPOCHS,
         validation_data=val_generator,
-        class_weight={cfg.CLASS_MAP_[keys[0]]:class_weights[keys[0]],
-                      cfg.CLASS_MAP_[keys[1]]:class_weights[keys[1]]}
+        class_weight={cfg.CLASS_MAP_[labels[0]]:class_weights[labels[0]],
+                      cfg.CLASS_MAP_[labels[1]]:class_weights[labels[1]]}
     )
 
-    print(f"*** DEBUG - After pre-training LR = {keras.backend.get_value(model.optimizer.iterations)}")
+    print(f"*** DEBUG - After "
+          f"{keras.backend.get_value(model.optimizer.iterations)} "
+          f"pre-training iterations")
 
     hist = model.fit(
         train_generator,
-        epochs=cfg.EPOCHS+cfg.NUM_INIT_EPOCHS,
+        epochs=cfg.EPOCHS,
         initial_epoch=cfg.NUM_INIT_EPOCHS,
         validation_data=val_generator,
-        class_weight={cfg.CLASS_MAP_[keys[0]]:class_weights[keys[0]],
-                      cfg.CLASS_MAP_[keys[1]]:class_weights[keys[1]]},
+        class_weight={cfg.CLASS_MAP_[labels[0]]:class_weights[labels[0]],
+                      cfg.CLASS_MAP_[labels[1]]:class_weights[labels[1]]},
         #callbacks=[checkpoint, early]
         callbacks=[early]
     )
@@ -1121,7 +931,8 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
     rs_ratio = f"{math.ceil(cfg.TRAIN_PERC_REAL*100)}:" \
                f"{math.ceil((1-cfg.TRAIN_PERC_REAL)*100)}"
 
-    out.output_plots(base_path=cfg.BASE_PATH, history=hist, rs_ratio=rs_ratio,
+    out.output_plots(base_path=cfg.BASE_PATH, history=hist,
+                     train_imgs=[total_real, total_synth_train],
                      num_init_epochs=cfg.NUM_INIT_EPOCHS)
 
     if monitor_mode == 'max':
@@ -1231,9 +1042,9 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str,
     out.output_Confusion_Mat_Heatmap(
                 conf_matx=conf_matx,
                 path=os.path.join(cfg.BASE_PATH, "Test_Results_Heatmap.png"),
-                rs_ratio=rs_ratio,
+                train_imgs=[total_real, total_synth_train],
                 cost=cost_per_test_sample,
-                classes=list(df_test["class"].unique()))
+                classes=list(df_test["label"].unique()))
 
     print(f"--- Manual Test Score: "
           f"Accuracy={round(num_correct / len(df_test_results), 3)} "
@@ -1310,10 +1121,9 @@ if __name__=="__main__":
 
     print("DONE")
 
-    main(type=args.model,
-            cfg_setting=args.cfg,
-            CASE_FLAG=args.use_case,
-            base_path=path,
-            use_synth_dataset_list=synth_datasets)
+    run_experiment(type=args.model,
+                    cfg_setting=args.cfg,
+                    CASE_FLAG=args.use_case,
+                    base_path=path)
 
 

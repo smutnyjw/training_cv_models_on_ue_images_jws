@@ -19,38 +19,38 @@ import pandas
 import seaborn as sns
 
 
-def output_plots(base_path, history, rs_ratio, num_init_epochs):
+def output_plots(base_path, history, train_imgs, num_init_epochs):
     output_learning_plot(os.path.join(base_path, "plot_AccLoss.png"),
                             history,
-                            rs_ratio,
+                            train_imgs,
                             num_init_epochs,
                             True)
     output_learning_acc_only_plot(
         os.path.join(base_path, "plot_Acc.png"),
         history,
-        rs_ratio,
+        train_imgs,
         num_init_epochs,
         True)
     output_learning_loss_only_plot(
         os.path.join(base_path, "plot_Loss.png"),
         history,
-        rs_ratio,
+        train_imgs,
         num_init_epochs)
     output_recall_precision_plot(
         os.path.join(base_path, "plot_RecPre.png"),
         history,
-        rs_ratio,
+        train_imgs,
         num_init_epochs)
 
     output_learning_plot(
         os.path.join(base_path, "plot_AccLoss-noValAcc.png"),
         history,
-        rs_ratio,
+        train_imgs,
         num_init_epochs, False)
     output_learning_acc_only_plot(
         os.path.join(base_path, "plot_Acc-NoValAcc.png"),
         history,
-        rs_ratio,
+        train_imgs,
         num_init_epochs, False)
 
 def output_model_arch(path, model: keras.Model):
@@ -60,7 +60,7 @@ def output_model_arch(path, model: keras.Model):
     sys.stdout = sys.__stdout__
 
 
-def output_learning_plot(path, hist, rs_ratio, num_init_epochs, output_val_acc):
+def output_learning_plot(path, hist, train_imgs, num_init_epochs, output_val_acc):
     # Artifact: PLOT - Training Accuracy & Loss
     fig, ax1 = plt.subplots()
     ax1.set_xlabel("Epoch")
@@ -91,13 +91,15 @@ def output_learning_plot(path, hist, rs_ratio, num_init_epochs, output_val_acc):
 
     ax2.legend(handles1+handles2, labels1+labels2, loc='lower left')
 
-    plt.title(f"Model Training Accuracy & Loss - {rs_ratio}")
+    plt.title(f"Model Training Accuracy & Loss\n"
+              f"{train_imgs[0]} Real & {train_imgs[1]} Synthetic Training "
+              "images")
     plt.savefig(path) #"output/basic_impl_model_training_results.png")
     plt.close()
     plt.cla()
 
 
-def output_learning_acc_only_plot(path, hist, rs_ratio,
+def output_learning_acc_only_plot(path, hist, train_imgs,
                                   num_init_epochs, output_val_acc):
     plt.plot(hist.history["accuracy"], 'b-')
     if output_val_acc:
@@ -114,13 +116,15 @@ def output_learning_acc_only_plot(path, hist, rs_ratio,
     plt.ylim(0.0, 1.0)
     plt.ylabel("Accuracy")
     plt.xlabel("Epoch")
-    plt.title(f"Model Training Accuracy - {rs_ratio}")
+    plt.title(f"Model Training Accuracy\n"
+              f"{train_imgs[0]} Real & {train_imgs[1]} Synthetic Training "
+              "images")
     plt.savefig(path)
     plt.close()
     plt.cla()
 
 
-def output_learning_loss_only_plot(path, hist, rs_ratio, num_init_epochs):
+def output_learning_loss_only_plot(path, hist, train_imgs, num_init_epochs):
     plt.plot(hist.history["loss"], 'r-')
     plt.plot(hist.history['val_loss'], 'r--')
     max_loss = math.ceil(max(hist.history['loss']+hist.history['val_loss']))
@@ -133,14 +137,16 @@ def output_learning_loss_only_plot(path, hist, rs_ratio, num_init_epochs):
 
     plt.ylabel("Loss")
     plt.xlabel("Epoch")
-    plt.title(f"Model Training Loss - {rs_ratio}")
+    plt.title(f"Model Training Loss\n"
+              f"{train_imgs[0]} Real & {train_imgs[1]} Synthetic Training "
+              "images")
     plt.legend(["Acc", "Val_Loss"])
     plt.savefig(path)
     plt.close()
     plt.cla()
 
 
-def output_recall_precision_plot(path, hist, rs_ratio, num_init_epochs):
+def output_recall_precision_plot(path, hist, train_imgs, num_init_epochs):
     # Artifact: PLOT - Training Accuracy & Loss
     plt.plot(hist.history["recall"], 'g-')
     plt.plot(hist.history['val_recall'], 'g--')
@@ -152,7 +158,9 @@ def output_recall_precision_plot(path, hist, rs_ratio, num_init_epochs):
                    colors='r', linestyles='dotted',
                    label="Initial Training")
 
-    plt.title(f"Model Training Recall & Precision - {rs_ratio}")
+    plt.title(f"Model Training Recall & Precision\n"
+              f"{train_imgs[0]} Real & {train_imgs[1]} Synthetic Training "
+              "images")
     plt.ylabel("Recall/Precision")
     plt.xlabel("Epoch")
     plt.legend(["Recall", "Val Recall", "Prec", "Val Prec"])
@@ -160,7 +168,7 @@ def output_recall_precision_plot(path, hist, rs_ratio, num_init_epochs):
     plt.close()
     plt.cla()
 
-def output_Confusion_Mat_Heatmap(conf_matx, path, rs_ratio, cost, classes):
+def output_Confusion_Mat_Heatmap(conf_matx, path, train_imgs, cost, classes):
     hm = sns.heatmap(conf_matx,
                      annot=True,
                      annot_kws={"size": 10},
@@ -173,7 +181,8 @@ def output_Confusion_Mat_Heatmap(conf_matx, path, rs_ratio, cost, classes):
                      )
     hm.set(xlabel="Model Prediction", ylabel="Actual")
     plt.title(f"Confusion Matrix - Cost per Sample: {cost}\n"
-              f"100% Real Test Images - {rs_ratio} R:Syn Training Images")
+              f"{train_imgs[0]} Real & {train_imgs[1]} Synthetic Training "
+              f"Images")
     plt.savefig(path)
     plt.close()
     plt.cla()

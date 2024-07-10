@@ -1,2 +1,4 @@
 
 *.bmp
+/code/02_Classifier_Training/output/mobilenet
+/code/02_Classifier_Training/output/vgg16/cats_dogs
