@@ -441,8 +441,10 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
         init_epochs = settings[str(cfg_setting)]['init_epochs']
         total_epochs = settings[str(cfg_setting)]['total_epochs']
         total_synth_train = settings[str(cfg_setting)]['total_synth_training']
-        total_real = settings[str(cfg_setting)]['total_real']
-        data_splits = settings['data_splits']
+        total_real_train = settings[str(cfg_setting)]['total_synth_training']
+        total_real_val = settings[str(cfg_setting)]['total_real_val']
+        total_real_test = settings[str(cfg_setting)]['total_real_test']
+        total_real_images = total_real_train + total_real_val + total_real_test
         class_ratios = settings['class_ratios']
 
 
@@ -450,25 +452,22 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     # Override based on json file
 
     try:
-        cfg.TOTAL_NUMBER_OF_IMAGES = total_real + total_synth_train
+        cfg.TOTAL_NUMBER_OF_IMAGES = total_real_images + total_synth_train
 
-        cfg.TRAIN_PERC_REAL = (total_real * data_splits['split_train']) \
-                                / ((total_real * data_splits['split_train']) \
-                                  + total_synth_train)
+        cfg.TRAIN_PERC_REAL = total_real_images \
+                              / (total_real_images + total_synth_train)
 
         cfg.NUM_INIT_EPOCHS = init_epochs
         cfg.EPOCHS = total_epochs
 
-        cfg.PERC_TRAIN = ((total_real * data_splits['split_train'])
-                            + total_synth_train) / cfg.TOTAL_NUMBER_OF_IMAGES
-        cfg.PERC_VAL = (total_real * data_splits['split_val']) \
+        cfg.PERC_TRAIN = (total_real_train + total_synth_train) \
                             / cfg.TOTAL_NUMBER_OF_IMAGES
-        cfg.PERC_TEST = (total_real * data_splits['split_test']) \
-                            / cfg.TOTAL_NUMBER_OF_IMAGES
+        cfg.PERC_VAL = total_real_val / cfg.TOTAL_NUMBER_OF_IMAGES
+        cfg.PERC_TEST = total_real_test / cfg.TOTAL_NUMBER_OF_IMAGES
 
         #[RealCat/Defect, RealDog/Good, SynCat/Defect, SynDog/Good]
-        force_sample = [int(total_real * class_ratios[0]),
-                        int(total_real * class_ratios[1]),
+        force_sample = [int(total_real_train * class_ratios[0]),
+                        int(total_real_train * class_ratios[1]),
                         int(total_synth_train * class_ratios[0]),
                         int(total_synth_train * class_ratios[1])]
     except:
@@ -650,7 +649,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     df_real = pd.DataFrame()
     for id, l in enumerate(population_real_df['label'].unique()):
         df_l = population_real_df.query(f'label == \"{l}\"')
-        df_l = df_l.sample(int(total_real * class_ratios[id]))
+        df_l = df_l.sample(int(total_real_images * class_ratios[id]))
 
         if id == 0:
             df_real = df_l.copy()
@@ -671,7 +670,8 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
         if id == 0:
             population_synth_df = df_i.copy()
         else:
-            population_synth_df = pd.merge(population_synth_df, df_i, how='outer')
+            population_synth_df = pd.merge(population_synth_df,
+                                           df_i, how='outer')
 
     if len(population_synth_df['label'].unique()) != 2:
         raise("ERROR: Number of unique classes found is not 2. Double check "
@@ -715,14 +715,14 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     x_train, x_val, y_train, y_val = train_test_split(
                         df_real[keys[0]].tolist(),
                         df_real[keys[1]].tolist(),
-                        train_size=int(total_real * data_splits['split_train']),
+                        train_size=int(total_real_train),
                         stratify=df_real[keys[1]].tolist()
                     )
 
     x_val, x_test, y_val, y_test = train_test_split(
                         x_val,
                         y_val,
-                        test_size=int(total_real * data_splits['split_val']),
+                        test_size=int(total_real_val),
                         stratify=y_val
                     )
 
@@ -753,7 +753,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     print("*************************\n")
 
     cfg._info_model["Classes"] = labels
-    cfg._info_model["Number of REAL Images"] = total_real
+    cfg._info_model["Number of REAL Images"] = total_real_images
     cfg._info_model["Number of SYNTH Images"] = total_synth_train
 
     cfg._info_model["Class Distribution"] = [
@@ -928,11 +928,8 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
 
     ####
     # Output artifacts from training
-    rs_ratio = f"{math.ceil(cfg.TRAIN_PERC_REAL*100)}:" \
-               f"{math.ceil((1-cfg.TRAIN_PERC_REAL)*100)}"
-
     out.output_plots(base_path=cfg.BASE_PATH, history=hist,
-                     train_imgs=[total_real, total_synth_train],
+                     train_imgs=[total_real_train, total_synth_train],
                      num_init_epochs=cfg.NUM_INIT_EPOCHS)
 
     if monitor_mode == 'max':
@@ -1042,7 +1039,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     out.output_Confusion_Mat_Heatmap(
                 conf_matx=conf_matx,
                 path=os.path.join(cfg.BASE_PATH, "Test_Results_Heatmap.png"),
-                train_imgs=[total_real, total_synth_train],
+                train_imgs=[total_real_train, total_synth_train],
                 cost=cost_per_test_sample,
                 classes=list(df_test["label"].unique()))
 
