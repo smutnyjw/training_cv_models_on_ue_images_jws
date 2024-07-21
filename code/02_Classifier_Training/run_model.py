@@ -228,7 +228,7 @@ def build_vgg16_transfer_learning(img_size, num_classes, base_path):
 #       Misc Method declarations
 ####################################################################
 
-def setup_output_dir(base_path, type, cfg_num):
+def setup_output_dir(base_path, type, case: str, cfg_num):
     '''
     Function used at the start of any run to create a 'run artifact'
     directory. This directory will contain various output files and
@@ -241,7 +241,7 @@ def setup_output_dir(base_path, type, cfg_num):
     now = datetime.now()
     start = now.strftime("%Y_%m_%d-%H_%M_%S")
     path = os.path.join(base_path, type, 'pending_review',
-                        f"{start}-{type}-{cfg_num}")
+                        f"{start}-{type}-{case}-{cfg_num}")
 
     try:
         os.mkdir(path)
@@ -396,7 +396,10 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
         import cfg_vgg16 as cfg
 
         cfg.BASE_PATH = setup_output_dir(base_path=base_path,
-                                         type='vgg16', cfg_num=cfg_setting)
+                                         type='vgg16',
+                                         case=CASE_FLAG,
+                                         cfg_num=cfg_setting)
+
         model = build_vgg16_transfer_learning(img_size=cfg.IMAGE_SIZE,
                                                 num_classes=cfg.NUM_CLASSES,
                                                 base_path=cfg.BASE_PATH,
@@ -413,7 +416,9 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     elif type.lower() == "mobilenetv3":
         import cfg_mobilenet as cfg
         cfg.BASE_PATH = setup_output_dir(base_path=base_path,
-                                         type='mobilenet', cfg_num=cfg_setting)
+                                         type='mobilenet',
+                                         case=CASE_FLAG,
+                                         cfg_num=cfg_setting)
 
         model = build_mobilenet_transfer_learning(img_size=cfg.IMAGE_SIZE,
                                                 num_classes=cfg.NUM_CLASSES,
@@ -441,7 +446,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
         init_epochs = settings[str(cfg_setting)]['init_epochs']
         total_epochs = settings[str(cfg_setting)]['total_epochs']
         total_synth_train = settings[str(cfg_setting)]['total_synth_training']
-        total_real_train = settings[str(cfg_setting)]['total_synth_training']
+        total_real_train = settings[str(cfg_setting)]['total_real_training']
         total_real_val = settings[str(cfg_setting)]['total_real_val']
         total_real_test = settings[str(cfg_setting)]['total_real_test']
         total_real_images = total_real_train + total_real_val + total_real_test
@@ -712,19 +717,29 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
 
     keys = df_real.keys()
 
-    x_train, x_val, y_train, y_val = train_test_split(
-                        df_real[keys[0]].tolist(),
-                        df_real[keys[1]].tolist(),
-                        train_size=int(total_real_train),
-                        stratify=df_real[keys[1]].tolist()
-                    )
+    if int(total_real_train) > 0:
+        x_train, x_val, y_train, y_val = train_test_split(
+                            df_real[keys[0]].tolist(),
+                            df_real[keys[1]].tolist(),
+                            train_size=int(total_real_train),
+                            stratify=df_real[keys[1]].tolist()
+                        )
 
-    x_val, x_test, y_val, y_test = train_test_split(
-                        x_val,
-                        y_val,
-                        test_size=int(total_real_val),
-                        stratify=y_val
-                    )
+        x_val, x_test, y_val, y_test = train_test_split(
+                            x_val,
+                            y_val,
+                            test_size=int(total_real_val),
+                            stratify=y_val
+                        )
+    else:
+        x_train, y_train = [], []
+
+        x_val, x_test, y_val, y_test = train_test_split(
+            df_real[keys[0]].tolist(),
+            df_real[keys[1]].tolist(),
+            test_size=int(total_real_val),
+            stratify=df_real[keys[1]].tolist()
+        )
 
     df_train_real = pd.DataFrame({keys[0]: x_train, keys[1]: y_train})
 
@@ -754,6 +769,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
 
     cfg._info_model["Classes"] = labels
     cfg._info_model["Number of REAL Images"] = total_real_images
+    cfg._info_model["Number of REAL Training Images"] = total_real_train
     cfg._info_model["Number of SYNTH Images"] = total_synth_train
 
     cfg._info_model["Class Distribution"] = [
@@ -1030,7 +1046,7 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
 
     num_correct = TP + TN
     cfg._info_results['test_Manual_accuracy'] = round(num_correct /
-                                                      len(df_test_results), 2)
+                                                      len(df_test_results), 5)
 
     out.output_debug_info(os.path.join(cfg.BASE_PATH, "_REF_run_info.txt"),
                           [cfg._info_model, cfg._info_dataset,
@@ -1101,18 +1117,10 @@ if __name__=="__main__":
                         help="[-1, 7] The set configuration to run")
     parser.add_argument("-u", "--use_case", required=True, type=str,
                         help="[Cats_Dogs, weld] The use case to run.")
-    parser.add_argument("-s", "--synth_dataset_preset", required=True, type=int,
-                        help="[0, 1] Choose which dataset presets to use")
 
     args = parser.parse_args()
-    if args != 4:
+    if args != 3:
         raise "ERROR: Incorrect number of inputs. Need two (-m & -c)."
-
-    if args.synth_datasets == 0:
-        synth_datasets = [1, 1, 0, 0]
-    else:
-        synth_datasets = [1, 1, 1, 1]
-
 
     path = os.path.join('output')
 
