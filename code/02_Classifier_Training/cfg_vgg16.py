@@ -94,6 +94,7 @@ _info_model = {
     "Classes": CLASS_MAP_.keys(),
     "Number of Images": TOTAL_NUMBER_OF_IMAGES,
     "Number of REAL Images": -1,
+    "Number of REAL Training Images": -1,
     "Number of SYNTH Images": -1,
     "Number of SYNTH Images available": -1,
     "Class Distribution": [-1, -1],

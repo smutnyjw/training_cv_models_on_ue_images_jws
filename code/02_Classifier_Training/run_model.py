@@ -821,6 +821,10 @@ def run_experiment(type: str, cfg_setting: int, CASE_FLAG: str, base_path: str):
     ####################################################################
     # Insert loaded image into training generator to apply 2D augmentations
 
+    for i, img in enumerate(list(df_train[df_train.columns[0]])):
+        if os.path.isfile(img) is False:
+            print(f"\tdf_train {i} file does not exist: {img}")
+
     train_generator = train_datagen.flow_from_dataframe(
         dataframe=df_train,
         directory=None,

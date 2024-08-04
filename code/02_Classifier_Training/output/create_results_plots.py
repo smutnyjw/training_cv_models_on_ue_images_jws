@@ -63,7 +63,7 @@ def output_acc_plot(df: pd.DataFrame, path: str):
     handles1, labels1 = ax1.get_legend_handles_labels()
     ax1.legend(handles1, labels1, loc='lower right')
 
-    plt.title(f"Model Training Accuracy - {constant_samples} Images")
+    plt.title(f"Model Accuracy - {constant_samples} Training Images")
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
     plt.cla()
@@ -92,13 +92,13 @@ def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str):
         xLabel = "Number of Synthetic Images"
         constant_samples = f"{num_real[0]} Real"
         subtitle = f"With rising synthetic training samples." \
-                   f" {df['num'].min()} samples"
+                   f" {df['num'].min()} trials"
 
     else:
         x = num_real
         xLabel = "Number of Real Training Images"
         constant_samples = f"{num_synth[0]} Synthetic"
-        subtitle = f"With rising real training samples. {df['num'].min()} samples"
+        subtitle = f"With rising real training samples. {df['num'].min()} trials"
     ###
 
     if min(acc_min) < 0.5 or min(test_acc_min) < 0.5:
@@ -133,7 +133,7 @@ def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str):
     handles1, labels1 = ax1.get_legend_handles_labels()
     ax1.legend(handles1, labels1, loc='lower right')
 
-    plt.title(f"{title_str} Training - Accuracy - {constant_samples} Images\n"
+    plt.title(f"{title_str} - Accuracy - {constant_samples} Training Images\n"
               f"{subtitle}")
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
@@ -178,7 +178,7 @@ def output_loss_plot(df: pd.DataFrame, path: str):
     handles1, labels1 = ax1.get_legend_handles_labels()
     ax1.legend(handles1, labels1, loc='upper right')
 
-    plt.title(f"Model Training Loss - {constant_samples} Images")
+    plt.title(f"Model Loss - {constant_samples} Training Images")
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
     plt.cla()
@@ -207,13 +207,13 @@ def output_shadow_loss_plot(df: pd.DataFrame, title_str: str, path: str):
         xLabel = "Number of Synthetic Images"
         constant_samples = f"{num_real[0]} Real"
         subtitle = f"With rising synthetic training samples." \
-                   f" {df['num'].min()} samples"
+                   f" {df['num'].min()} trials"
 
     else:
         x = num_real
         xLabel = "Number of Real Training Images"
         constant_samples = f"{num_synth[0]} Synthetic"
-        subtitle = f"With rising real training samples. {df['num'].min()} samples"
+        subtitle = f"With rising real training samples. {df['num'].min()} trials"
 
     ###
 
@@ -242,7 +242,7 @@ def output_shadow_loss_plot(df: pd.DataFrame, title_str: str, path: str):
     handles1, labels1 = ax1.get_legend_handles_labels()
     ax1.legend(handles1, labels1, loc='lower right')
 
-    plt.title(f"{title_str} Training - Loss - {constant_samples} Images\n"
+    plt.title(f"{title_str} - Loss - {constant_samples} Training Images\n"
               f"{subtitle}")
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
