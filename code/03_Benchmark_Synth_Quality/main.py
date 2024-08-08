@@ -8,15 +8,14 @@ Other Notes:
 
 '''
 
-import os, sys
-import json
+import os
 import pandas as pd
 from datetime import datetime
+import matplotlib.pyplot as plt
+import numpy as np
 
-import tensorflow as tf
 import keras
-from keras.preprocessing.image import ImageDataGenerator
-from keras.applications.vgg16 import preprocess_input
+from keras.applications import vgg16, mobilenet_v3
 
 
 def build_vgg16_model(img_size):
@@ -25,8 +24,8 @@ def build_vgg16_model(img_size):
 
     # Load base VGG16
     vgg16_model = keras.applications.VGG16(
-        input_shape=img_size,
-        include_top=False,
+        # input_shape=img_size,
+        # include_top=False,
         weights="imagenet"
     )
 
@@ -49,10 +48,10 @@ def build_mobilenet_model(img_size):
     # Load base MobileNetV3
     # https://keras.io/api/applications/mobilenet/
     mobilenet_model = keras.applications.MobileNetV3Small(
-        input_shape=img_size,       #default is (224,224,3)
-        alpha=1.0,    # default=1    Causes error if not 1
-        minimalistic=False,
-        include_top=True,
+        # input_shape=img_size,       #default is (224,224,3)
+        # alpha=1.0,    # default=1    Causes error if not 1
+        # minimalistic=False,
+        # include_top=False,
         weights="imagenet"
     )
 
@@ -73,19 +72,23 @@ def make_binary_prediction(model, thres, x_array):
     return prediction, confidence
 
 
-def process_test_image(img, show_image):
+def process_test_image(img, show_image, opt: str):
     if show_image:
         print(img)
         plt.imshow(img)
 
     x = keras.utils.img_to_array(img)
     x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
+
+    if opt.lower == "vgg16":
+        x = vgg16.preprocess_input(x)
+    else:
+        x = mobilenet_v3.preprocess_input(x)
 
     return x
 
 
-def output_dataset_csv(path, df: pd.DataFrame):
+def output_dataset_csv(df: pd.DataFrame, path: str):
     # Output csv log
     try:
         df.to_csv(path)
@@ -93,11 +96,36 @@ def output_dataset_csv(path, df: pd.DataFrame):
         print(f"**** WARN: Dataframes to {path} was not defined")
 
 
+def output_distribution_plot(df, path: str, data_type: str, model_type: str):
+
+    bins = range(0, 100, 10)
+    df_top3 = df.query("top_gram >= 0")
+    dist1 = df_top3['confidence'] * 100
+    df_outside = df.query("top_gram == -1")
+    dist2 = df_outside['confidence'] * 100
+
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharey=False, tight_layout=True)
+    ax[0].hist(dist1, bins=bins)
+    ax[1].hist(dist2, bins=bins)
+
+    fig.suptitle(f"Confidence Score Distribution "
+            f"for {data_type} Cats & Dogs - {model_type}")
+    ax[0].set_title(f"Actual class in Top3 ({len(df_top3)}/{len(df)})")
+    ax[1].set_title(f"Actual class not in Top3 ({len(df_outside)}/{len(df)})")
+    plt.savefig(path)
+    plt.close()
+    plt.cla()
+
+
 def run_model_for_df(df: pd.DataFrame, model, out_path: str, data_type: str,
-                     img_size, CLASS_MAP_: dict):
+                     img_size, CLASS_MAP_: dict, model_type: str):
+    print(f"**** Run for {data_type} images - {model_type}")
+
+    type = out_path.split('\\')[-1]
     df_test_results = pd.DataFrame(columns=['filepath',
-                                            'pred', 'actual', 'result',
-                                            'confidence'])
+                                            'actual', 'top_gram', 'confidence',
+                                            'Top1', 'Top2', 'Top3'])
+
 
     for i in range(len(df)):
         if i % int(len(df) / 10) == 0:
@@ -105,32 +133,79 @@ def run_model_for_df(df: pd.DataFrame, model, out_path: str, data_type: str,
         img_path = df.iloc()[i, 0]
         label = df.iloc()[i, 1]
 
+        # Get prediction confidence scores for each image
         img = keras.utils.load_img(img_path, target_size=img_size)
-        img = process_test_image(img, False)
-        prediction, confidence = make_binary_prediction(model,
-                                                        0.5,
-                                                        img)
+        img = process_test_image(img, False, type)
+        conf = model.predict(img, verbose=0)
 
-        # Decode the prediction
+        # Get top 3 confidence scores
+        _3_gram= []
+        if type.lower() == "vgg16":
+            decoded = vgg16.decode_predictions(conf, top=3)[0]
+        else:
+            decoded = mobilenet_v3.decode_predictions(conf, top=3)[0]
+
+        for item in decoded:
+            _3_gram.append(item[1])
+        #print(f"{type.lower()} Predictions: {_3_gram}")
+
+
+        # Determine if the actual label is in the top 3
+        valid_keys = CLASS_MAP_[label]
+        # find_conf = np.copy(conf[0])
+        # result = -1
+        # for id in range(3):
+        #     if np.argmax(find_conf) in valid_keys:
+        #         result = id
+        #         break
+        #     else:
+        #         find_conf[np.argmax(find_conf)] = -1
+        cs = np.copy(conf[0])
+        cs.sort()
+        top_three_indexs = [np.argwhere(conf[0] == cs[-1])[0][0],
+                            np.argwhere(conf[0] == cs[-2])[0][0],
+                            np.argwhere(conf[0] == cs[-3])[0][0]]
+
         result = -1
-        for key in CLASS_MAP_.keys():
-            if CLASS_MAP_[key] == prediction:
-                prediction = key
-                result = 1 if prediction == label else 0
+        confidence = 0.0
+        for i, top_id in enumerate(top_three_indexs):
+            if top_id in valid_keys:
+                result = i
+                confidence = conf[0][top_id]
                 break
+
+        # Get the top confidence score out of valid keys if not in top 3
+        if result == -1:
+            for key in valid_keys:
+                if conf[0][key] > confidence:
+                    confidence = conf[0][key]
+
+        # Hard cap the confidence score
+        confidence = 1 if confidence > 1 else confidence
 
         # store results in a dataframe
         df_test_results.loc[len(df_test_results.index)] = [img_path,
-                                                           prediction,
                                                            label,
                                                            result,
-                                                           confidence[0][0]]
+                                                           confidence,
+                                                           _3_gram[0],
+                                                           _3_gram[1],
+                                                           _3_gram[2]
+                                                           ]
+        # End of img for loop
+
+    type_str = f"{model_type}-{data_type}"
+    output_distribution_plot(df=df_test_results,
+                                path=os.path.join(out_path,
+                                                f"Dist_Plot-{type_str}.png"),
+                             data_type=data_type, model_type=model_type)
+
     output_dataset_csv(path=os.path.join(out_path,
-                                             f"TEST_RESULTS_{data_type}.csv"),
+                                f"Confidence_RESULTS-{type_str}.csv"),
                            df=df_test_results)
 
 
-def setup_output_dir(base_path, type, case: str):
+def setup_output_dir(base_path, case: str):
     '''
     Function used at the start of any run to create a 'run artifact'
     directory. This directory will contain various output files and
@@ -142,7 +217,8 @@ def setup_output_dir(base_path, type, case: str):
     '''
     now = datetime.now()
     start = now.strftime("%Y_%m_%d-%H_%M_%S")
-    path = os.path.join(base_path, type,
+    type = base_path.split('\\')[-1]
+    path = os.path.join(base_path,
                         f"{start}-{type}-{case}-conf")
 
     try:
@@ -169,25 +245,33 @@ if __name__=="__main__":
     df_test_real = pd.read_csv(cat_dog_real_path)
     df_test_synth = pd.read_csv(cat_dog_synth_path)
 
+    # df_test_real = df_test_real.sample(100)
+    # df_test_synth = df_test_synth.sample(100)
+
     ##################
     # Perform the manual test by manually calling .predict().
-    CLASS_MAP = {'dog': 0, 'cat': 1}
+    #   https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/
+    #   Dog iffy: 275
+    #   Cat iffy: 286, 287, 383, 387
+    CLASS_MAP = {'dog': list(range(151, 268)),
+                 'cat': [281, 282, 283, 284, 285, 286, 287, 383, 387]}
 
-    results_path = os.path.join(base_path, "vgg16")
-    setup_output_dir(base_path=results_path, type="VGG16", case="Cat_Dog")
+    results_path = setup_output_dir(base_path=base_path, case="Cat_Dog")
 
+    # VGG16
     run_model_for_df(df=df_test_real, model=vgg_model, out_path=results_path,
-                     data_type="real", img_size=img_size, CLASS_MAP_=CLASS_MAP)
+                     data_type="real", img_size=img_size, CLASS_MAP_=CLASS_MAP,
+                     model_type="vgg16")
     run_model_for_df(df=df_test_synth, model=vgg_model, out_path=results_path,
-                     data_type="synth", img_size=img_size, CLASS_MAP_=CLASS_MAP)
-
-    results_path = os.path.join(base_path, "mobilenet")
-    setup_output_dir(base_path=results_path, type="MobileNet", case="Cat_Dog")
-
+                     data_type="synth", img_size=img_size, CLASS_MAP_=CLASS_MAP,
+                     model_type="vgg16")
+    # MobileNet
     run_model_for_df(df=df_test_real, model=mn_model, out_path=results_path,
-                     data_type="real", img_size=img_size, CLASS_MAP_=CLASS_MAP)
+                     data_type="real", img_size=img_size, CLASS_MAP_=CLASS_MAP,
+                     model_type="mobilenet")
     run_model_for_df(df=df_test_synth, model=mn_model, out_path=results_path,
-                     data_type="synth", img_size=img_size, CLASS_MAP_=CLASS_MAP)
+                     data_type="synth", img_size=img_size, CLASS_MAP_=CLASS_MAP,
+                     model_type="mobilenet")
 
 
 
