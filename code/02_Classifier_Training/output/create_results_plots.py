@@ -13,63 +13,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math
 
-def output_acc_plot(df: pd.DataFrame, path: str):
-    print("*** Outputting a Accuracy vs Synth image plot")
-
-    ###
-    # output a line plot detailing the change in Accuracy compared to
-    # number of synthetic training images
-
-    acc = list(df['accuracy'])
-    test_acc = list(df['test_Manual_accuracy'])
-    num_real = list(df['Number of REAL Training Images'])
-    num_synth = list(df['Number of SYNTH Images'])
-
-    if df['id'].min() == 0:
-        x = num_synth
-        xLabel = "Number of Synthetic Images"
-        constant_samples = f"{num_real[0]} Real"
-
-    else:
-        x = num_real
-        xLabel = "Number of Real Training Images"
-        constant_samples = f"{num_synth[0]} Synthetic"
-
-    ##
-
-    if min(acc) < 0.5 or min(test_acc) < 0.5:
-        y_min = 0.0
-        y_max = 1.0
-    elif 0.5 < min(acc) < 0.8 or 0.5 < min(test_acc) < 0.8:
-        y_min = 0.5
-        y_max = 1.0
-    elif 0.8 < min(acc) < 0.9 or 0.8 < min(test_acc) < 0.9:
-        y_min = 0.8
-        y_max = 1.0
-    elif 0.9 < min(acc) or 0.9 < min(test_acc):
-        y_min = 0.9
-        y_max = 1.0
-
-    ##
-
-    fig, ax1 = plt.subplots()
-    ax1.set_xlabel(xLabel)
-    ax1.set_ylabel("Accuracy")
-    ax1.tick_params(axis='y', labelcolor='b')
-    ax1.set_ylim(y_min, y_max)
-    ax1.plot(x, acc, 'b--', label='Acc')
-    ax1.plot(x, test_acc, 'b-', label='Test_Acc')
-
-    handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='lower right')
-
-    plt.title(f"Model Accuracy - {constant_samples} Training Images")
-    plt.savefig(path)  # "output/basic_impl_model_training_results.png")
-    plt.close()
-    plt.cla()
-
-
-def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str):
+def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str,
+                           y_range: tuple):
     print("*** Outputting a Accuracy shadow vs Synth image plot")
 
     ###
@@ -90,39 +35,29 @@ def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str):
     if df['id'].min() == 0:
         x = num_synth
         xLabel = "Number of Synthetic Images"
-        constant_samples = f"{num_real[0]} Real"
-        subtitle = f"With rising synthetic training samples." \
-                   f" {df['num'].min()} trials"
+        subtitle = f"Training Set: {num_real[0]} Real + various Synthetic"
 
     else:
         x = num_real
         xLabel = "Number of Real Training Images"
-        constant_samples = f"{num_synth[0]} Synthetic"
-        subtitle = f"With rising real training samples. {df['num'].min()} trials"
+        subtitle = f"Training Set: various Real + {num_synth[0]} Synthetic"
+
+    str_trails = f"{df['num'].min()} trials"
+
     ###
 
-    if min(acc_min) < 0.5 or min(test_acc_min) < 0.5:
-        y_min = 0.0
-        y_max = 1.0
-    elif 0.5 < min(acc_min) < 0.8 or 0.5 < min(test_acc_min) < 0.8:
-        y_min = 0.5
-        y_max = 1.0
-    elif 0.8 < min(acc_min) < 0.9 or 0.8 < min(test_acc_min) < 0.9:
-        y_min = 0.8
-        y_max = 1.0
-    elif 0.9 < min(acc_min) or 0.9 < min(test_acc_min):
-        y_min = 0.9
-        y_max = 1.0
+    y_min = y_range[0] - 0.02
+    y_max = y_range[1]
 
     ###
 
     fig, ax1 = plt.subplots()
-    ax1.set_xlabel(xLabel)
-    ax1.set_ylabel("Accuracy")
+    ax1.set_xlabel(xLabel, fontsize=14)
+    ax1.set_ylabel("Accuracy", fontsize=14)
     ax1.tick_params(axis='y', labelcolor='b')
     ax1.set_ylim(y_min, y_max)
 
-    ax1.plot(x, acc_mean, 'b--', label='Acc')
+    ax1.plot(x, acc_mean, 'b--', label='Training_Acc')
     ax1.plot(x, test_acc_mean, 'b-', label='Test_Acc')
 
     ax1.plot(x, test_acc_min, 'b-', alpha=0.01)
@@ -131,54 +66,15 @@ def output_shadow_acc_plot(df: pd.DataFrame, title_str: str, path: str):
                    interpolate=True, color="blue", alpha=0.1)
 
     handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='lower right')
+    ax1.legend(handles1, labels1, loc='lower right', prop={'size': 14})
 
-    plt.title(f"{title_str} - Accuracy - {constant_samples} Training Images\n"
-              f"{subtitle}")
-    plt.savefig(path)  # "output/basic_impl_model_training_results.png")
-    plt.close()
-    plt.cla()
+    fig.suptitle(f"{title_str} - Accuracy - {str_trails}",
+                 fontsize=14, fontweight="bold")
+    ax1.set_title(subtitle, fontsize=13, color="gray")
 
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
 
-def output_acc_loss_plot(df: pd.DataFrame, path: str):
-    print("*** Outputting a Accuracy + Loss vs Synth image plot")
-
-def output_loss_plot(df: pd.DataFrame, path: str):
-    print("*** Outputting a Loss vs Synth image plot")
-    ###
-    # output a line plot detailing the change in Loss compared to
-    # number of synthetic training images
-
-    loss = list(df['loss'])
-    test_loss = list(df['test_loss'])
-    num_real = list(df['Number of REAL Training Images'])
-    num_synth = list(df['Number of SYNTH Images'])
-
-    if df['id'].min() == 0:
-        x = num_synth
-        xLabel = "Number of Synthetic Images"
-        constant_samples = f"{num_real[0]} Real"
-
-    else:
-        x = num_real
-        xLabel = "Number of Real Training Images"
-        constant_samples = f"{num_synth[0]} Synthetic"
-
-
-    ###
-
-    fig, ax1 = plt.subplots()
-    ax1.set_xlabel(xLabel)
-    ax1.set_ylabel("Loss")
-    ax1.tick_params(axis='y', labelcolor='r')
-    ax1.set_ylim(0.0, 2.0)
-    ax1.plot(x, loss, 'r--', label='loss')
-    ax1.plot(x, test_loss, 'r-', label='Test_Loss')
-
-    handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='upper right')
-
-    plt.title(f"Model Loss - {constant_samples} Training Images")
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
     plt.cla()
@@ -205,15 +101,14 @@ def output_shadow_loss_plot(df: pd.DataFrame, title_str: str, path: str):
     if df['id'].min() == 0:
         x = num_synth
         xLabel = "Number of Synthetic Images"
-        constant_samples = f"{num_real[0]} Real"
-        subtitle = f"With rising synthetic training samples." \
-                   f" {df['num'].min()} trials"
+        subtitle = f"Training Set: {num_real[0]} Real + <variable> synth"
 
     else:
         x = num_real
         xLabel = "Number of Real Training Images"
-        constant_samples = f"{num_synth[0]} Synthetic"
-        subtitle = f"With rising real training samples. {df['num'].min()} trials"
+        subtitle = f"Training Set: <variable> Real + {num_synth[0]} synth"
+
+    str_trails = f"{df['num'].min()} trials"
 
     ###
 
@@ -227,11 +122,11 @@ def output_shadow_loss_plot(df: pd.DataFrame, title_str: str, path: str):
     ###
 
     fig, ax1 = plt.subplots()
-    ax1.set_xlabel(xLabel)
-    ax1.set_ylabel("Loss")
+    ax1.set_xlabel(xLabel, fontsize=14)
+    ax1.set_ylabel("Loss", fontsize=14)
     ax1.tick_params(axis='y', labelcolor='r')
     ax1.set_ylim(0.0, y_max)
-    ax1.plot(x, loss_mean, 'r--', label='loss')
+    ax1.plot(x, loss_mean, 'r--', label='Training_Loss')
     ax1.plot(x, test_loss_mean, 'r-', label='Test_Loss')
 
     ax1.plot(x, test_loss_min, 'r-', alpha=0.01)
@@ -240,10 +135,15 @@ def output_shadow_loss_plot(df: pd.DataFrame, title_str: str, path: str):
                      interpolate=True, color="red", alpha=0.1)
 
     handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='lower right')
+    ax1.legend(handles1, labels1, loc='upper right', prop={'size': 14})
 
-    plt.title(f"{title_str} - Loss - {constant_samples} Training Images\n"
-              f"{subtitle}")
+    fig.suptitle(f"{title_str} - Loss - {str_trails}",
+                 fontsize=14, fontweight="bold")
+    ax1.set_title(subtitle, fontsize=13, color="gray")
+
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+
     plt.savefig(path)  # "output/basic_impl_model_training_results.png")
     plt.close()
     plt.cla()
@@ -259,8 +159,6 @@ def run_logic(CASE: str, MODEL: str, TRAIN_INC_RANGE: range):
 
     for i, model in enumerate(list(df_csv['Model'].unique())):
         for j, case in enumerate(list(df_csv['Classes'].unique())):
-            type = "cat_dog" if "cat" in case else "weld"
-            inc = "IncSynth" if TRAIN_INC_RANGE[0] == 0 else "IncReal"
 
             #for k in list(df_csv['id'].unique()):
             df_instance = df_csv.query(f'Model == \"{model}\" and '
@@ -380,14 +278,33 @@ def run_logic(CASE: str, MODEL: str, TRAIN_INC_RANGE: range):
 
                 df_trio = pd.DataFrame.from_dict(max_min_dict)
                 df_trio = df_trio.sort_values(by=["id"])
+
+                ###
+
+                type = "cat_dog" if "cat" in case else "weld"
+                inc = "IncSynth" if TRAIN_INC_RANGE[0] == 0 else "IncReal"
+
+                if "cat" in case and "real" in inc.lower():
+                    y_lim = (0.6, 1.0)
+                elif "cat" in case and "synth" in inc.lower():
+                    y_lim = (0.85, 1.0)
+                elif "defect" in case.lower() and "real" in inc.lower():
+                    y_lim = (0.4, 1.0)
+                elif "defect" in case.lower() and "synth" in inc.lower():
+                    y_lim = (0.7, 1.0)
+
+                ###
+
                 df_trio.to_csv(os.path.join(path, "_plots",
-                                f"2_{model}_{type}_{inc}_plots.csv"))
-                output_shadow_acc_plot(df_trio, title, os.path.join(path,
-                                                                    "_plots",
-                                f"2_{model}_{type}_{inc}_acc_plot.png"))
-                output_shadow_loss_plot(df_trio, title, os.path.join(path,
-                                                                     "_plots",
-                                f"2_{model}_{type}_{inc}_loss_plot.png"))
+                                    f"{model}_{type}_{inc}_plots.csv"))
+
+                p = os.path.join(path, "_plots",
+                                f"{model}_{type}_{inc}_acc_plot.png")
+                output_shadow_acc_plot(df_trio, title, p, y_range=y_lim)
+
+                p = os.path.join(path, "_plots",
+                                f"{model}_{type}_{inc}_loss_plot.png")
+                output_shadow_loss_plot(df_trio, title, p)
 
 
 if __name__=="__main__":
